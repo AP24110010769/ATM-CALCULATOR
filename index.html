@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ATM Simulator</title>
+<style>
+  body {
+    margin: 0;
+    font-family: "Poppins", sans-serif;
+    background: radial-gradient(circle at center, #0d0d0d, #1a1a1a);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .screen {
+    display: none;
+    text-align: center;
+    width: 350px;
+    background: #111;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 0 20px #0ff;
+  }
+
+  .screen.active {
+    display: block;
+  }
+
+  h1, h2 {
+    color: #0ff;
+  }
+
+  button {
+    background: #0ff;
+    border: none;
+    padding: 10px 20px;
+    margin: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #111;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    background: #06c5c5;
+  }
+
+  input {
+    padding: 10px;
+    width: 80%;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    text-align: center;
+  }
+
+  #userBalance {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #0ff;
+    transition: opacity 0.5s ease;
+    opacity: 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- 🏠 HOME SCREEN -->
+<div id="homeScreen" class="screen active">
+  <h1 id="welcomeText">WELCOME TO THE ATM</h1>
+  <p id="pressNext">Press next to continue</p>
+  <button id="nextBtn" onclick="goToLanguage()">Next</button>
+</div>
+
+<!-- 🌐 LANGUAGE SELECTION -->
+<div id="languageScreen" class="screen">
+  <h2 id="selectLanguageText">Select Language</h2>
+  <button onclick="selectLanguage('english')">English</button>
+  <button onclick="selectLanguage('hindi')">हिन्दी</button>
+</div>
+
+<!-- 🔐 LOGIN OR REGISTER -->
+<div id="authScreen" class="screen">
+  <h2 id="authTitle">ATM Access</h2>
+  <input type="password" id="pinInput" placeholder="Enter PIN">
+  <br>
+  <button id="loginBtn" onclick="login()">Login</button>
+  <button id="registerBtn" onclick="showRegister()">Register</button>
+</div>
+
+<!-- 📝 REGISTER -->
+<div id="registerScreen" class="screen">
+  <h2 id="registerTitle">New User Registration</h2>
+  <input type="password" id="newPin" placeholder="Create PIN"><br>
+  <input type="number" id="initialBalance" placeholder="Initial Deposit (₹)"><br>
+  <button id="submitBtn" onclick="register()">Submit</button>
+  <button id="backBtn" onclick="goToAuth()">Back</button>
+</div>
+
+<!-- 💰 MAIN MENU -->
+<div id="menuScreen" class="screen">
+  <h2 id="menuTitle">ATM Menu</h2>
+  <p id="userBalance"></p>
+  <button id="depositBtn" onclick="showDeposit()">Deposit</button>
+  <button id="withdrawBtn" onclick="showWithdraw()">Withdraw</button>
+  <button id="checkBalanceBtn" onclick="checkBalance()">Check Balance</button>
+  <button id="logoutBtn" onclick="logout()">Logout</button>
+</div>
+
+<!-- 💸 DEPOSIT -->
+<div id="depositScreen" class="screen">
+  <h2 id="depositTitle">Deposit Money</h2>
+  <input type="number" id="depositAmount" placeholder="Enter amount (₹)">
+  <br>
+  <button id="depositSubmitBtn" onclick="deposit()">Submit</button>
+  <button id="depositBackBtn" onclick="goToMenu()">Back</button>
+</div>
+
+<!-- 💵 WITHDRAW -->
+<div id="withdrawScreen" class="screen">
+  <h2 id="withdrawTitle">Withdraw Money</h2>
+  <input type="number" id="withdrawAmount" placeholder="Enter amount (₹)">
+  <br>
+  <button id="withdrawSubmitBtn" onclick="withdraw()">Submit</button>
+  <button id="withdrawBackBtn" onclick="goToMenu()">Back</button>
+</div>
+
+<script>
+  let currentUser = null;
+  let users = JSON.parse(localStorage.getItem("atmUsers")) || {};
+  let currentLang = localStorage.getItem("atmLanguage") || "english";
+
+  const translations = {
+    english: {
+      welcome: "WELCOME TO THE ATM",
+      pressNext: "Press next to continue",
+      next: "Next",
+      selectLanguage: "Select Language",
+      authTitle: "ATM Access",
+      enterPin: "Enter PIN",
+      login: "Login",
+      register: "Register",
+      newUser: "New User Registration",
+      createPin: "Create PIN",
+      initialDeposit: "Initial Deposit (₹)",
+      submit: "Submit",
+      back: "Back",
+      menu: "ATM Menu",
+      deposit: "Deposit",
+      withdraw: "Withdraw",
+      checkBalance: "Check Balance",
+      logout: "Logout",
+      depositMoney: "Deposit Money",
+      withdrawMoney: "Withdraw Money",
+      enterAmount: "Enter amount (₹)"
+    },
+    hindi: {
+      welcome: "एटीएम में आपका स्वागत है",
+      pressNext: "जारी रखने के लिए अगला दबाएं",
+      next: "आगे",
+      selectLanguage: "भाषा चुनें",
+      authTitle: "एटीएम पहुँच",
+      enterPin: "पिन दर्ज करें",
+      login: "लॉगिन",
+      register: "पंजीकरण",
+      newUser: "नया उपयोगकर्ता पंजीकरण",
+      createPin: "पिन बनाएं",
+      initialDeposit: "प्रारंभिक जमा (₹)",
+      submit: "जमा करें",
+      back: "वापस",
+      menu: "एटीएम मेनू",
+      deposit: "जमा करें",
+      withdraw: "निकासी",
+      checkBalance: "शेष राशि जांचें",
+      logout: "लॉगआउट",
+      depositMoney: "पैसे जमा करें",
+      withdrawMoney: "पैसे निकालें",
+      enterAmount: "राशि दर्ज करें (₹)"
+    }
+  };
+
+  function applyLanguage() {
+    const t = translations[currentLang];
+    document.getElementById("welcomeText").innerText = t.welcome;
+    document.getElementById("pressNext").innerText = t.pressNext;
+    document.getElementById("nextBtn").innerText = t.next;
+    document.getElementById("selectLanguageText").innerText = t.selectLanguage;
+    document.getElementById("authTitle").innerText = t.authTitle;
+    document.getElementById("pinInput").placeholder = t.enterPin;
+    document.getElementById("loginBtn").innerText = t.login;
+    document.getElementById("registerBtn").innerText = t.register;
+    document.getElementById("registerTitle").innerText = t.newUser;
+    document.getElementById("newPin").placeholder = t.createPin;
+    document.getElementById("initialBalance").placeholder = t.initialDeposit;
+    document.getElementById("submitBtn").innerText = t.submit;
+    document.getElementById("backBtn").innerText = t.back;
+    document.getElementById("menuTitle").innerText = t.menu;
+    document.getElementById("depositBtn").innerText = t.deposit;
+    document.getElementById("withdrawBtn").innerText = t.withdraw;
+    document.getElementById("checkBalanceBtn").innerText = t.checkBalance;
+    document.getElementById("logoutBtn").innerText = t.logout;
+    document.getElementById("depositTitle").innerText = t.depositMoney;
+    document.getElementById("depositAmount").placeholder = t.enterAmount;
+    document.getElementById("depositSubmitBtn").innerText = t.submit;
+    document.getElementById("depositBackBtn").innerText = t.back;
+    document.getElementById("withdrawTitle").innerText = t.withdrawMoney;
+    document.getElementById("withdrawAmount").placeholder = t.enterAmount;
+    document.getElementById("withdrawSubmitBtn").innerText = t.submit;
+    document.getElementById("withdrawBackBtn").innerText = t.back;
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+  }
+
+  function goToLanguage() { showScreen("languageScreen"); }
+
+  function selectLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem("atmLanguage", lang);
+    applyLanguage();
+    showScreen("authScreen");
+  }
+
+  function showRegister() { showScreen("registerScreen"); }
+  function goToAuth() { showScreen("authScreen"); }
+
+  function login() {
+    const pin = document.getElementById("pinInput").value;
+    if (users[pin]) {
+      currentUser = pin;
+      showScreen("menuScreen");
+      hideBalance();
+      document.getElementById("pinInput").value = "";
+    } else alert(currentLang === "english" ? "Invalid PIN. Please register first!" : "अमान्य पिन। कृपया पहले पंजीकरण करें!");
+  }
+
+  function register() {
+    const pin = document.getElementById("newPin").value;
+    const balance = parseFloat(document.getElementById("initialBalance").value);
+    if (!pin || isNaN(balance) || balance < 0) {
+      alert(currentLang === "english" ? "Please enter valid details!" : "कृपया सही जानकारी दर्ज करें!");
+      return;
+    }
+    if (users[pin]) {
+      alert(currentLang === "english" ? "User already exists!" : "उपयोगकर्ता पहले से मौजूद है!");
+      return;
+    }
+    users[pin] = { balance };
+    localStorage.setItem("atmUsers", JSON.stringify(users));
+    alert(currentLang === "english" ? "Registration successful!" : "पंजीकरण सफल रहा!");
+    document.getElementById("newPin").value = "";
+    document.getElementById("initialBalance").value = "";
+    showScreen("authScreen");
+  }
+
+  function showDeposit() { showScreen("depositScreen"); }
+  function showWithdraw() { showScreen("withdrawScreen"); }
+
+  function deposit() {
+    const amount = parseFloat(document.getElementById("depositAmount").value);
+    if (isNaN(amount) || amount <= 0) {
+      alert(currentLang === "english" ? "Enter valid amount!" : "मान्य राशि दर्ज करें!");
+      return;
+    }
+    users[currentUser].balance += amount;
+    localStorage.setItem("atmUsers", JSON.stringify(users));
+    alert(`₹${amount} ${currentLang === "english" ? "deposited successfully!" : "सफलतापूर्वक जमा हुआ!"}`);
+    document.getElementById("depositAmount").value = "";
+    goToMenu();
+  }
+
+  function withdraw() {
+    const amount = parseFloat(document.getElementById("withdrawAmount").value);
+    if (isNaN(amount) || amount <= 0) {
+      alert(currentLang === "english" ? "Enter valid amount!" : "मान्य राशि दर्ज करें!");
+      return;
+    }
+    if (users[currentUser].balance < amount) {
+      alert(currentLang === "english" ? "Insufficient balance!" : "पर्याप्त शेष नहीं है!");
+      return;
+    }
+    users[currentUser].balance -= amount;
+    localStorage.setItem("atmUsers", JSON.stringify(users));
+    alert(`₹${amount} ${currentLang === "english" ? "withdrawn successfully!" : "सफलतापूर्वक निकाला गया!"}`);
+    document.getElementById("withdrawAmount").value = "";
+    goToMenu();
+  }
+
+  function checkBalance() {
+    const balance = users[currentUser].balance;
+    const balanceText = document.getElementById("userBalance");
+    balanceText.innerText = currentLang === "english"
+      ? `Your Balance: ₹${balance}`
+      : `आपकी शेष राशि: ₹${balance}`;
+    balanceText.style.opacity = 1;
+  }
+
+  function hideBalance() {
+    const balanceText = document.getElementById("userBalance");
+    balanceText.innerText = "";
+    balanceText.style.opacity = 0;
+  }
+
+  function goToMenu() {
+    showScreen("menuScreen");
+    hideBalance();
+  }
+
+  function logout() {
+    currentUser = null;
+    // ✅ Reset language to English on logout
+    currentLang = "english";
+    localStorage.setItem("atmLanguage", "english");
+    applyLanguage();
+    alert("You have been logged out!");
+    showScreen("homeScreen");
+  }
+
+  // Apply saved language when page loads
+  window.onload = applyLanguage;
+</script>
+
+</body>
+</html>
